@@ -1,12 +1,13 @@
+import { isPlatformServer } from '@angular/common';
 import { Inject, Injectable, Injector, PLATFORM_ID } from '@angular/core';
+import { Route } from '@angular/router';
 import {
   CmsComponentMapping,
+  CmsComponentRoutesConfig,
   CmsConfig,
   deepMerge,
   DeferLoadingStrategy,
 } from '@spartacus/core';
-import { Route } from '@angular/router';
-import { isPlatformServer } from '@angular/common';
 import { defer, forkJoin, Observable, of } from 'rxjs';
 import { mapTo, share, tap } from 'rxjs/operators';
 import { FeatureModulesService } from './feature-modules.service';
@@ -162,6 +163,18 @@ export class CmsComponentsService {
       }
     }
     return routes;
+  }
+
+  /**
+   * Return routes config for component type.
+   */
+  getRoutesConfig(componentTypes: string[]): CmsComponentRoutesConfig {
+    const configs = componentTypes
+      .map((componentType) => this.getMapping(componentType)?.routesConfig)
+      .filter(Boolean);
+
+    // In real cases there should be only one component with routes config.
+    return deepMerge({}, ...configs);
   }
 
   /**

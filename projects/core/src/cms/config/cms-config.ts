@@ -1,9 +1,9 @@
 import { Injectable, StaticProvider } from '@angular/core';
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { AuthConfig } from '../../auth/config/auth-config';
+import { Config } from '../../config/config.module';
 import { KymaConfig } from '../../kyma/config/kyma-config';
 import { OccConfig } from '../../occ/config/occ-config';
-import { Config } from '../../config/config.module';
 
 export interface StandardCmsComponentConfig {
   CMSSiteContextComponent?: CmsComponentMapping;
@@ -37,10 +37,16 @@ export interface JspIncludeCmsComponentConfig {
 export const JSP_INCLUDE_CMS_COMPONENT_TYPE = 'JspIncludeComponent';
 export const CMS_FLEX_COMPONENT_TYPE = 'CMSFlexComponent';
 
+export interface CmsComponentRoutesConfig {
+  PARENT?: Pick<Route, 'component' | 'data'>;
+  [key: string]: Pick<Route, 'path' | 'component' | 'data'>;
+}
+
 export interface CmsComponentMapping {
   component?: any;
   providers?: StaticProvider[];
   childRoutes?: Routes;
+  routesConfig?: CmsComponentRoutesConfig;
   disableSSR?: boolean;
   i18nKeys?: string[];
   guards?: any[];

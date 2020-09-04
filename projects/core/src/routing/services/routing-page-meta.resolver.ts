@@ -4,7 +4,6 @@ import { combineLatest, Observable, of } from 'rxjs';
 import { map, shareReplay, switchMap } from 'rxjs/operators';
 import { BreadcrumbMeta } from '../../cms/model/page.model';
 import { TranslationService } from '../../i18n';
-import { CmsRoute } from '../models/cms-route';
 import { ActivatedRoutesService } from './activated-routes.service';
 import { DefaultRouteBreadcrumbResolver } from './default-route-breadcrumb.resolver';
 import {
@@ -50,7 +49,7 @@ export class RoutingPageMetaResolver {
       switchMap((routes) =>
         routes.length
           ? combineLatest(
-              routes.map((route) => this.resolveRouteBreadcrumb(route, options))
+              routes.map((route) => this.resolveRouteBreadcrumb(route))
             )
           : of([])
       ),
@@ -83,15 +82,9 @@ export class RoutingPageMetaResolver {
    * @see `DefaultRouteBreadcrumbResolver`
    */
   protected resolveRouteBreadcrumb(
-    route: ActivatedRouteSnapshot & RouteWithPageMetaConfig,
-    options: RoutingBreadcrumbResolverOptions
+    route: ActivatedRouteSnapshot & RouteWithPageMetaConfig
   ): Observable<BreadcrumbMeta[]> {
     const path = this.getPath(route);
-
-    // SPIKE TODO: don't use the CMS tile. Take it from route `data` property (needs to be filled when plugging CMS driven child routes)
-    if ((route as CmsRoute).data?.cxCmsRouteContext) {
-      return of([{ link: path, label: options.pageTitle }]);
-    }
 
     const breadcrumbConfig = route.data?.cxPageMeta?.breadcrumb;
 

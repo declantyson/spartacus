@@ -31,7 +31,7 @@ export abstract class DefaultRouteBreadcrumbResolver
   ): Observable<BreadcrumbMeta[]> {
     const label$ = this.resolveParams().pipe(
       switchMap((params) =>
-        this.translation.translate(breadcrumbConfig.i18n, params)
+        this.translation.translate(breadcrumbConfig.i18n, params ?? {})
       )
     );
 

@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Route, Router } from '@angular/router';
-import { CmsRoute, PageContext, PageType } from '@spartacus/core';
+import {
+  CmsComponentRoutesConfig,
+  CmsRoute,
+  deepMerge,
+  PageContext,
+  PageType,
+} from '@spartacus/core';
 import { PageLayoutComponent } from '../page/page-layout/page-layout.component';
 import { CmsComponentsService } from './cms-components.service';
 
@@ -10,7 +16,10 @@ export class CmsRoutesImplService {
   constructor(
     private router: Router,
     private cmsComponentsService: CmsComponentsService
-  ) {}
+  ) {
+    // SPIKE TODO REMOVE:
+    window['router'] = router;
+  }
 
   private cmsRouteExists(url: string): boolean {
     const isCmsDrivenRoute = url.startsWith('/');
@@ -52,8 +61,19 @@ export class CmsRoutesImplService {
     const componentRoutes = this.cmsComponentsService.getChildRoutes(
       componentTypes
     );
+    const componentRoutesConfig = this.cmsComponentsService.getRoutesConfig(
+      componentTypes
+    );
+
     if (componentRoutes.length) {
-      if (this.updateRouting(pageContext, currentPageLabel, componentRoutes)) {
+      if (
+        this.updateRouting(
+          pageContext,
+          currentPageLabel,
+          componentRoutes,
+          componentRoutesConfig
+        )
+      ) {
         this.router.navigateByUrl(currentUrl);
         return false;
       }
@@ -64,7 +84,8 @@ export class CmsRoutesImplService {
   private updateRouting(
     pageContext: PageContext,
     pageLabel: string,
-    routes: Route[]
+    routes: Route[],
+    routesConfig: CmsComponentRoutesConfig
   ): boolean {
     if (
       pageContext.type === PageType.CONTENT_PAGE &&
@@ -76,6 +97,7 @@ export class CmsRoutesImplService {
         component: PageLayoutComponent,
         children: routes,
         data: {
+          cxKey: 'PARENT', // by convention to match the routes configuration of the CMS mapping
           cxCmsRouteContext: {
             type: pageContext.type,
             id: pageLabel,
@@ -83,10 +105,41 @@ export class CmsRoutesImplService {
         },
       };
 
-      this.router.resetConfig([newRoute, ...this.router.config]);
+      this.router.resetConfig([
+        this.configureRoute(newRoute, routesConfig),
+        ...this.router.config,
+      ]);
       return true;
     }
 
     return false;
+  }
+
+  private configureRoutes(
+    routes: Route[],
+    routesConfig: CmsComponentRoutesConfig
+  ): Route[] {
+    return routes.map((route) => this.configureRoute(route, routesConfig));
+  }
+
+  private configureRoute(
+    route: Route,
+    routesConfig: CmsComponentRoutesConfig
+  ): Route {
+    const newRoute = { ...route }; // avoid mutating original objects
+
+    const config = routesConfig[route.data?.cxKey] ?? {}; // SPIKE TODO new convention cxKey!
+
+    // Noe we can configure: path, component and data.
+    // In future we may easily support other properties
+    newRoute.path = config.path ?? route.path;
+    newRoute.component = config.component ?? route.component;
+    newRoute.data = deepMerge({}, route.data ?? {}, config.data);
+
+    newRoute.children = this.configureRoutes(
+      route.children ?? [],
+      routesConfig
+    );
+    return newRoute;
   }
 }
