@@ -27,6 +27,15 @@ export const costCenter = {
       changes: 'Changes are saved automatically.',
     },
   },
+
+  breadcrumbs: {
+    list: 'All Cost Centers',
+    details: '{{name}}',
+    create: 'Create',
+    edit: 'Edit',
+    budgets: 'Budgets in {{code}}',
+    assignBudgets: 'Assign budgets in {{code}}',
+  },
 };
 
 export const costCenterAssignBudgets = {

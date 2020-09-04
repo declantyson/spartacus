@@ -4,11 +4,14 @@ import {
   CmsService,
   ContentPageMetaResolver,
   PageBreadcrumbResolver,
+  PageTitleResolver,
+  RoutingPageMetaResolver,
+  RoutingService,
   SemanticPathService,
   TranslationService,
 } from '@spartacus/core';
-import { combineLatest, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { combineLatest, defer, Observable } from 'rxjs';
+import { map, shareReplay, switchMap } from 'rxjs/operators';
 
 /**
  * Resolves the page data for Organization Pages.
@@ -22,34 +25,96 @@ import { map } from 'rxjs/operators';
   providedIn: 'root',
 })
 export class OrganizationPageMetaResolver extends ContentPageMetaResolver
-  implements PageBreadcrumbResolver {
+  implements PageBreadcrumbResolver, PageTitleResolver {
   pageTemplate = 'CompanyPageTemplate';
-  protected ORGANIZATION_TRANSLATION_KEY = 'organization.breadcrumb';
+
+  /**
+   * Translation key for the breadcrumb of Organization home page
+   */
+  protected readonly ORGANIZATION_TRANSLATION_KEY = 'organization.breadcrumb';
+
+  /**
+   * Semantic route name of the Organization home page
+   */
+  protected readonly ORGANIZATION_SEMANTIC_ROUTE = 'organization';
 
   constructor(
     protected cms: CmsService,
     protected translation: TranslationService,
-    protected semanticPath: SemanticPathService
+    protected semanticPath: SemanticPathService,
+    protected routingService: RoutingService,
+    protected routingPageMetaResolver: RoutingPageMetaResolver
   ) {
     super(cms, translation);
   }
+
   /**
-   * @override
-   * @returns {Observable<BreadcrumbMeta[]>} containing the localized label as well as the link for both home and organization breadcrumbs
+   * Breadcrumb of the homepage.
+   */
+  protected homepageBreadcrumb$: Observable<BreadcrumbMeta[]> = defer(() =>
+    super.resolveBreadcrumbs()
+  );
+
+  /**
+   * Breadcrumb of the Organization page.
+   */
+  protected organizationBreadcrumb$: Observable<
+    BreadcrumbMeta[]
+  > = this.translation.translate(this.ORGANIZATION_TRANSLATION_KEY).pipe(
+    map((label) => [
+      {
+        label,
+        link: this.semanticPath.get(this.ORGANIZATION_SEMANTIC_ROUTE),
+      },
+    ])
+  );
+
+  /**
+   * Breadcrumbs calculated from Angular (sub)routes.
+   */
+  protected routesBreadcrumbs$: Observable<BreadcrumbMeta[]> = defer(() =>
+    // SPIKE TODO don't base on the CMS title, but build on its own from breadcrumb config
+    super.resolveTitle().pipe(
+      switchMap((pageTitle) =>
+        this.routingPageMetaResolver.resolveBreadcrumbs({
+          pageTitle,
+          includeCurrentRoute: true, // we will trim the breadcrumb of the current route later on
+        })
+      )
+    )
+  );
+
+  /**
+   * Breadcrumbs returned in the method #resolveBreadcrumbs.
+   */
+  private breadcrumbs$: Observable<BreadcrumbMeta[]> = combineLatest([
+    this.homepageBreadcrumb$,
+    this.organizationBreadcrumb$,
+    this.routesBreadcrumbs$,
+  ]).pipe(
+    map(
+      ([
+        homepageBreadcrumb,
+        organizationHomepageBreadcrumb,
+        routesBreadcrumbs,
+      ]) => [
+        ...homepageBreadcrumb,
+        ...organizationHomepageBreadcrumb,
+        ...routesBreadcrumbs,
+      ]
+    ),
+    map((routes) => routes.slice(0, -1)), // drop the breadcrumb of the current route (the last one)
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+
+  /**
+   * Returns list of breadcrumbs for:
+   * - the home page
+   * - the organization home page
+   * - the organization's child pages (i.e. cost center list)
+   * - sub-routes of the organization's child pages (i.e. cost center details, edit cost center, ...)
    */
   resolveBreadcrumbs(): Observable<BreadcrumbMeta[]> {
-    return combineLatest([
-      super.resolveBreadcrumbs(),
-      this.translation.translate(this.ORGANIZATION_TRANSLATION_KEY),
-    ]).pipe(
-      map(([breadcrumb, organizationLabel]: [BreadcrumbMeta[], string]) =>
-        breadcrumb.concat([
-          {
-            label: organizationLabel,
-            link: this.semanticPath.get('organization'),
-          },
-        ])
-      )
-    );
+    return this.breadcrumbs$;
   }
 }
