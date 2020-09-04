@@ -13,7 +13,7 @@ import { ROUTE_PARAMS } from '../constants';
 import { OrganizationTableType } from '../shared/organization.model';
 import { CostCenterAssignBudgetsComponent } from './budgets/assign/cost-center-assign-budgets.component';
 import { CostCenterBudgetListComponent } from './budgets/list/cost-center-budget-list.component';
-import { CostCenterRouteBreadcrumbResolver } from './cost-center-route-breadcrumbs.resolver';
+import { CostCenterRouteBreadcrumbResolver } from './cost-center-route-breadcrumb.resolver';
 import { CostCenterCreateComponent } from './create/cost-center-create.component';
 import { CostCenterDetailsComponent } from './details/cost-center-details.component';
 import { CostCenterEditComponent } from './edit/cost-center-edit.component';
