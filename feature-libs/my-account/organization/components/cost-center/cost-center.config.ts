@@ -74,6 +74,9 @@ export const costCenterCmsConfig: CmsConfig = {
           },
         },
         create: {
+          path: 'create',
+          component: CostCenterCreateComponent,
+          canDeactivate: [SplitViewDeactivateGuard],
           data: {
             cxPageMeta: {
               breadcrumb: {
@@ -83,6 +86,9 @@ export const costCenterCmsConfig: CmsConfig = {
           },
         },
         details: {
+          path: `:${ROUTE_PARAMS.costCenterCode}`,
+          component: CostCenterDetailsComponent,
+          canDeactivate: [SplitViewDeactivateGuard],
           data: {
             cxPageMeta: {
               breadcrumb: {
@@ -93,6 +99,9 @@ export const costCenterCmsConfig: CmsConfig = {
           },
         },
         budgets: {
+          path: 'budgets',
+          component: CostCenterBudgetListComponent,
+          canDeactivate: [SplitViewDeactivateGuard],
           data: {
             cxPageMeta: {
               breadcrumb: {
@@ -103,6 +112,9 @@ export const costCenterCmsConfig: CmsConfig = {
           },
         },
         assignBudgets: {
+          path: 'assign',
+          component: CostCenterAssignBudgetsComponent,
+          canDeactivate: [SplitViewDeactivateGuard],
           data: {
             cxPageMeta: {
               breadcrumb: {
@@ -113,6 +125,9 @@ export const costCenterCmsConfig: CmsConfig = {
           },
         },
         edit: {
+          path: `:${ROUTE_PARAMS.costCenterCode}/edit`,
+          component: CostCenterEditComponent,
+          canDeactivate: [SplitViewDeactivateGuard],
           data: {
             cxPageMeta: {
               breadcrumb: {
@@ -122,51 +137,23 @@ export const costCenterCmsConfig: CmsConfig = {
           },
         },
       },
-
       childRoutes: [
+        { key: 'create' },
         {
-          path: 'create',
-          component: CostCenterCreateComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxKey: 'create',
-          },
-        },
-        {
-          path: `:${ROUTE_PARAMS.costCenterCode}`,
-          component: CostCenterDetailsComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxKey: 'details',
-          },
+          key: 'details',
           children: [
             {
-              path: 'budgets',
-              component: CostCenterBudgetListComponent,
-              canDeactivate: [SplitViewDeactivateGuard],
-              data: {
-                cxKey: 'budgets',
-              },
+              key: 'budgets',
               children: [
                 {
-                  path: 'assign',
-                  component: CostCenterAssignBudgetsComponent,
-                  canDeactivate: [SplitViewDeactivateGuard],
-                  data: {
-                    cxKey: 'assignBudgets',
-                  },
+                  key: 'assignBudgets',
                 },
               ],
             },
           ],
         },
         {
-          path: `:${ROUTE_PARAMS.costCenterCode}/edit`,
-          component: CostCenterEditComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxKey: 'edit',
-          },
+          key: 'edit',
         },
       ],
       guards: [AuthGuard],

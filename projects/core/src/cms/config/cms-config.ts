@@ -38,14 +38,19 @@ export const JSP_INCLUDE_CMS_COMPONENT_TYPE = 'JspIncludeComponent';
 export const CMS_FLEX_COMPONENT_TYPE = 'CMSFlexComponent';
 
 export interface CmsComponentRoutesConfig {
-  PARENT?: Pick<Route, 'component' | 'data'>;
-  [key: string]: Pick<Route, 'path' | 'component' | 'data'>;
+  PARENT?: Pick<Route, 'data'>; // SPIKE TODO: check what else we want to omit
+  [key: string]: Omit<Route, 'children'>;
+}
+
+export interface CmsComponentRoutesStructure {
+  key: string;
+  children?: CmsComponentRoutesStructure[];
 }
 
 export interface CmsComponentMapping {
   component?: any;
   providers?: StaticProvider[];
-  childRoutes?: Routes;
+  childRoutes?: Routes | CmsComponentRoutesStructure[]; // SPIKE TODO BREAKING CHANGE - maybe move to separate property?
   routesConfig?: CmsComponentRoutesConfig;
   disableSSR?: boolean;
   i18nKeys?: string[];

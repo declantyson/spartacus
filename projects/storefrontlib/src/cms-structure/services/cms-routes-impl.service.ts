@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { Route, Router } from '@angular/router';
 import {
   CmsComponentRoutesConfig,
+  CmsComponentRoutesStructure,
   CmsRoute,
-  deepMerge,
   PageContext,
   PageType,
 } from '@spartacus/core';
@@ -97,7 +97,6 @@ export class CmsRoutesImplService {
         component: PageLayoutComponent,
         children: routes,
         data: {
-          cxKey: 'PARENT', // by convention to match the routes configuration of the CMS mapping
           cxCmsRouteContext: {
             type: pageContext.type,
             id: pageLabel,
@@ -105,10 +104,13 @@ export class CmsRoutesImplService {
         },
       };
 
-      this.router.resetConfig([
-        this.configureRoute(newRoute, routesConfig),
-        ...this.router.config,
-      ]);
+      // Configurablity of the parent route limited to only extending the `data` property.
+
+      // SPIKE TODO: 'PARENT' to match the parent by convention
+      Object.assign(newRoute.data, routesConfig['PARENT']?.data ?? {});
+      newRoute.children = this.configureRoutes(newRoute.children, routesConfig);
+
+      this.router.resetConfig([newRoute, ...this.router.config]);
       return true;
     }
 
@@ -116,28 +118,26 @@ export class CmsRoutesImplService {
   }
 
   private configureRoutes(
-    routes: Route[],
+    routes: (Route | CmsComponentRoutesStructure)[],
     routesConfig: CmsComponentRoutesConfig
   ): Route[] {
     return routes.map((route) => this.configureRoute(route, routesConfig));
   }
 
   private configureRoute(
-    route: Route,
+    input: Route | CmsComponentRoutesStructure,
     routesConfig: CmsComponentRoutesConfig
   ): Route {
-    const newRoute = { ...route }; // avoid mutating original objects
+    if (!(input as CmsComponentRoutesStructure).key) {
+      return;
+    }
 
-    const config = routesConfig[route.data?.cxKey] ?? {}; // SPIKE TODO new convention cxKey!
+    const structure = input as CmsComponentRoutesStructure; // fix typing
 
-    // Noe we can configure: path, component and data.
-    // In future we may easily support other properties
-    newRoute.path = config.path ?? route.path;
-    newRoute.component = config.component ?? route.component;
-    newRoute.data = deepMerge({}, route.data ?? {}, config.data);
-
+    // avoid mutating the original config object
+    const newRoute = { ...(routesConfig[structure.key] ?? {}) } as Route; // SPIKE TODO new convention: key!
     newRoute.children = this.configureRoutes(
-      route.children ?? [],
+      structure.children ?? [],
       routesConfig
     );
     return newRoute;
