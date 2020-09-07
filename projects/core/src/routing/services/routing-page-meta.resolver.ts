@@ -96,12 +96,10 @@ export class RoutingPageMetaResolver {
       return of([{ link: path, label: breadcrumbConfig }]);
     }
 
-    if (breadcrumbConfig.resolver) {
-      const resolver: RouteBreadcrumbResolver =
-        this.injector.get(breadcrumbConfig.resolver, null) ||
-        this.injector.get(DefaultRouteBreadcrumbResolver, null);
+    const resolver: RouteBreadcrumbResolver =
+      this.injector.get(breadcrumbConfig.resolver, null) ||
+      this.injector.get(DefaultRouteBreadcrumbResolver, null);
 
-      return resolver.resolveBreadcrumbs(route, breadcrumbConfig, path);
-    }
+    return resolver.resolveBreadcrumbs(route, breadcrumbConfig, path);
   }
 }
