@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Route, Router } from '@angular/router';
 import {
+  CmsComponentChildRoutesConfig,
   CmsComponentRoutesConfig,
   CmsComponentRoutesStructure,
   CmsRoute,
+  deepMerge,
   PageContext,
   PageType,
 } from '@spartacus/core';
@@ -58,20 +60,26 @@ export class CmsRoutesImplService {
       return true;
     }
 
-    const componentRoutes = this.cmsComponentsService.getChildRoutes(
-      componentTypes
-    );
-    const componentRoutesConfig = this.cmsComponentsService.getRoutesConfig(
+    const childRoutesConfig = this.cmsComponentsService.getChildRoutes(
       componentTypes
     );
 
-    if (componentRoutes.length) {
+    // SPIKE TODO: deprecate Route[]. When support for it is dropped, we can remove this check:
+    const childRoutes: Route[] = Array.isArray(childRoutesConfig)
+      ? childRoutesConfig
+      : // when it's not array, it's a object config needed to build routes
+        this.buildChildRoutes(
+          childRoutesConfig.structure,
+          childRoutesConfig.routes
+        );
+
+    if (childRoutes.length) {
       if (
         this.updateRouting(
           pageContext,
           currentPageLabel,
-          componentRoutes,
-          componentRoutesConfig
+          childRoutes,
+          Array.isArray(childRoutesConfig) ? null : childRoutesConfig //deprecate Route[]. When support for it is dropped, we can remove this check and return `childRoutesConfig`
         )
       ) {
         this.router.navigateByUrl(currentUrl);
@@ -85,7 +93,7 @@ export class CmsRoutesImplService {
     pageContext: PageContext,
     pageLabel: string,
     routes: Route[],
-    routesConfig: CmsComponentRoutesConfig
+    childRoutesConfig?: CmsComponentChildRoutesConfig
   ): boolean {
     if (
       pageContext.type === PageType.CONTENT_PAGE &&
@@ -107,8 +115,11 @@ export class CmsRoutesImplService {
       // Configurablity of the parent route limited to only extending the `data` property.
 
       // SPIKE TODO: 'PARENT' to match the parent by convention
-      Object.assign(newRoute.data, routesConfig['PARENT']?.data ?? {});
-      newRoute.children = this.configureRoutes(newRoute.children, routesConfig);
+      // we can mutate original object, because it's already fresh
+      deepMerge(
+        newRoute.data,
+        childRoutesConfig?.routes?.['PARENT']?.data ?? {}
+      );
 
       this.router.resetConfig([newRoute, ...this.router.config]);
       return true;
@@ -117,26 +128,20 @@ export class CmsRoutesImplService {
     return false;
   }
 
-  private configureRoutes(
-    routes: (Route | CmsComponentRoutesStructure)[],
+  private buildChildRoutes(
+    routesStructure: CmsComponentRoutesStructure[],
     routesConfig: CmsComponentRoutesConfig
   ): Route[] {
-    return routes.map((route) => this.configureRoute(route, routesConfig));
+    return routesStructure.map((route) => this.buildRoute(route, routesConfig));
   }
 
-  private configureRoute(
-    input: Route | CmsComponentRoutesStructure,
+  private buildRoute(
+    structure: CmsComponentRoutesStructure,
     routesConfig: CmsComponentRoutesConfig
   ): Route {
-    if (!(input as CmsComponentRoutesStructure).key) {
-      return;
-    }
-
-    const structure = input as CmsComponentRoutesStructure; // fix typing
-
     // avoid mutating the original config object
     const newRoute = { ...(routesConfig[structure.key] ?? {}) } as Route; // SPIKE TODO new convention: key!
-    newRoute.children = this.configureRoutes(
+    newRoute.children = this.buildChildRoutes(
       structure.children ?? [],
       routesConfig
     );

@@ -2,8 +2,8 @@ import { isPlatformServer } from '@angular/common';
 import { Inject, Injectable, Injector, PLATFORM_ID } from '@angular/core';
 import { Route } from '@angular/router';
 import {
+  CmsComponentChildRoutesConfig,
   CmsComponentMapping,
-  CmsComponentRoutesConfig,
   CmsConfig,
   deepMerge,
   DeferLoadingStrategy,
@@ -155,26 +155,42 @@ export class CmsComponentsService {
   /**
    * Get cms driven child routes for components
    */
-  getChildRoutes(componentTypes: string[]): Route[] {
-    const routes = [];
+  getChildRoutes(
+    componentTypes: string[]
+  ): Route[] | CmsComponentChildRoutesConfig {
+    const results = [];
     for (const componentType of componentTypes) {
       if (this.shouldRender(componentType)) {
-        routes.push(...(this.getMapping(componentType)?.childRoutes ?? []));
+        const childRoutes = this.getMapping(componentType)?.childRoutes;
+        if (
+          !childRoutes ||
+          (Array.isArray(childRoutes) && !childRoutes.length)
+        ) {
+          continue;
+        }
+
+        if (Array.isArray(childRoutes)) {
+          // SPIKE TODO: we should deprecate Routes[]
+          results.push(...childRoutes);
+        } else {
+          results.push(childRoutes);
+        }
       }
     }
-    return routes;
-  }
 
-  /**
-   * Return routes config for component type.
-   */
-  getRoutesConfig(componentTypes: string[]): CmsComponentRoutesConfig {
-    const configs = componentTypes
-      .map((componentType) => this.getMapping(componentType)?.routesConfig)
-      .filter(Boolean);
+    // SPIKE TODO: should deprecate Routes[] - as it's not extendable.
 
-    // In real cases there should be only one component with routes config.
-    return deepMerge({}, ...configs);
+    // New behavior 1: if any element is the object-config, we ignore any Route[].
+    // New behavior 2: We assume only 1 component can have child routes.
+
+    const index = results.findIndex(
+      (res) => !Array.isArray(res) && Object.keys(res).length > 0
+    ); // find any object with properties that is not array
+    if (index !== -1) {
+      return results[index];
+    }
+
+    return results;
   }
 
   /**

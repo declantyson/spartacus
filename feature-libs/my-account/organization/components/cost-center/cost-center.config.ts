@@ -57,105 +57,109 @@ export const costCenterRoutingConfig: RoutingConfig = {
   },
 };
 
-export const costCenterCmsConfig: CmsConfig = {
+export const costCenterCmsConfig: CmsConfig | any = {
+  // SPIKE TODO remove `any`
   cmsComponents: {
     ManageCostCentersListComponent: {
       component: CostCenterListComponent,
 
-      routesConfig: {
-        PARENT: {
-          data: {
-            cxPageMeta: {
-              breadcrumb: {
-                i18n: 'costCenter.breadcrumbs.list',
-                resolver: CostCenterRouteBreadcrumbResolver,
+      childRoutes: {
+        structure: [
+          // SPIKE TODO: discuss name
+          { key: 'create' },
+          {
+            key: 'details',
+            children: [
+              {
+                key: 'budgets',
+                children: [
+                  {
+                    key: 'assignBudgets',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            key: 'edit',
+          },
+        ],
+        routes: {
+          PARENT: {
+            data: {
+              cxPageMeta: {
+                breadcrumb: {
+                  i18n: 'costCenter.breadcrumbs.list',
+                  resolver: CostCenterRouteBreadcrumbResolver,
+                },
               },
             },
           },
-        },
-        create: {
-          path: 'create',
-          component: CostCenterCreateComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxPageMeta: {
-              breadcrumb: {
-                i18n: 'costCenter.breadcrumbs.create',
+          create: {
+            path: 'create',
+            component: CostCenterCreateComponent,
+            canDeactivate: [SplitViewDeactivateGuard],
+            data: {
+              cxPageMeta: {
+                breadcrumb: {
+                  i18n: 'costCenter.breadcrumbs.create',
+                },
               },
             },
           },
-        },
-        details: {
-          path: `:${ROUTE_PARAMS.costCenterCode}`,
-          component: CostCenterDetailsComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxPageMeta: {
-              breadcrumb: {
-                i18n: 'costCenter.breadcrumbs.details',
-                resolver: CostCenterRouteBreadcrumbResolver,
+          details: {
+            path: `:${ROUTE_PARAMS.costCenterCode}`,
+            component: CostCenterDetailsComponent,
+            canDeactivate: [SplitViewDeactivateGuard],
+            data: {
+              cxPageMeta: {
+                breadcrumb: {
+                  i18n: 'costCenter.breadcrumbs.details',
+                  resolver: CostCenterRouteBreadcrumbResolver,
+                },
               },
             },
           },
-        },
-        budgets: {
-          path: 'budgets',
-          component: CostCenterBudgetListComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxPageMeta: {
-              breadcrumb: {
-                i18n: 'costCenter.breadcrumbs.budgets',
-                resolver: CostCenterRouteBreadcrumbResolver,
+          budgets: {
+            path: 'budgets',
+            component: CostCenterBudgetListComponent,
+            canDeactivate: [SplitViewDeactivateGuard],
+            data: {
+              cxPageMeta: {
+                breadcrumb: {
+                  i18n: 'costCenter.breadcrumbs.budgets',
+                  resolver: CostCenterRouteBreadcrumbResolver,
+                },
               },
             },
           },
-        },
-        assignBudgets: {
-          path: 'assign',
-          component: CostCenterAssignBudgetsComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxPageMeta: {
-              breadcrumb: {
-                i18n: 'costCenter.breadcrumbs.assignBudgets',
-                resolver: CostCenterRouteBreadcrumbResolver,
+          assignBudgets: {
+            path: 'assign',
+            component: CostCenterAssignBudgetsComponent,
+            canDeactivate: [SplitViewDeactivateGuard],
+            data: {
+              cxPageMeta: {
+                breadcrumb: {
+                  i18n: 'costCenter.breadcrumbs.assignBudgets',
+                  resolver: CostCenterRouteBreadcrumbResolver,
+                },
               },
             },
           },
-        },
-        edit: {
-          path: `:${ROUTE_PARAMS.costCenterCode}/edit`,
-          component: CostCenterEditComponent,
-          canDeactivate: [SplitViewDeactivateGuard],
-          data: {
-            cxPageMeta: {
-              breadcrumb: {
-                i18n: 'costCenter.breadcrumbs.edit',
+          edit: {
+            path: `:${ROUTE_PARAMS.costCenterCode}/edit`,
+            component: CostCenterEditComponent,
+            canDeactivate: [SplitViewDeactivateGuard],
+            data: {
+              cxPageMeta: {
+                breadcrumb: {
+                  i18n: 'costCenter.breadcrumbs.edit',
+                },
               },
             },
           },
         },
       },
-      childRoutes: [
-        { key: 'create' },
-        {
-          key: 'details',
-          children: [
-            {
-              key: 'budgets',
-              children: [
-                {
-                  key: 'assignBudgets',
-                },
-              ],
-            },
-          ],
-        },
-        {
-          key: 'edit',
-        },
-      ],
       guards: [AuthGuard],
     },
   },

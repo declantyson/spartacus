@@ -1,5 +1,5 @@
 import { Injectable, StaticProvider } from '@angular/core';
-import { Route, Routes } from '@angular/router';
+import { Route } from '@angular/router';
 import { AuthConfig } from '../../auth/config/auth-config';
 import { Config } from '../../config/config.module';
 import { KymaConfig } from '../../kyma/config/kyma-config';
@@ -43,14 +43,19 @@ export interface CmsComponentRoutesConfig {
 }
 
 export interface CmsComponentRoutesStructure {
-  key: string;
+  key?: string;
   children?: CmsComponentRoutesStructure[];
+}
+
+export interface CmsComponentChildRoutesConfig {
+  structure?: CmsComponentRoutesStructure[];
+  routes?: CmsComponentRoutesConfig;
 }
 
 export interface CmsComponentMapping {
   component?: any;
   providers?: StaticProvider[];
-  childRoutes?: Routes | CmsComponentRoutesStructure[]; // SPIKE TODO BREAKING CHANGE - maybe move to separate property?
+  childRoutes?: Route[] | CmsComponentChildRoutesConfig; // SPIKE TODO BREAKING CHANGE - maybe move to separate property?
   routesConfig?: CmsComponentRoutesConfig;
   disableSSR?: boolean;
   i18nKeys?: string[];
