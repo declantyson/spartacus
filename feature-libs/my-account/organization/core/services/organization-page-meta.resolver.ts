@@ -11,7 +11,7 @@ import {
   TranslationService,
 } from '@spartacus/core';
 import { combineLatest, defer, Observable } from 'rxjs';
-import { map, shareReplay, switchMap } from 'rxjs/operators';
+import { map, shareReplay } from 'rxjs/operators';
 
 /**
  * Resolves the page data for Organization Pages.
@@ -73,15 +73,9 @@ export class OrganizationPageMetaResolver extends ContentPageMetaResolver
    * Breadcrumbs calculated from Angular (sub)routes.
    */
   protected routesBreadcrumbs$: Observable<BreadcrumbMeta[]> = defer(() =>
-    // SPIKE TODO don't base on the CMS title, but build on its own from breadcrumb config
-    super.resolveTitle().pipe(
-      switchMap((pageTitle) =>
-        this.routingPageMetaResolver.resolveBreadcrumbs({
-          pageTitle,
-          includeCurrentRoute: true, // we will trim the breadcrumb of the current route later on
-        })
-      )
-    )
+    this.routingPageMetaResolver.resolveBreadcrumbs({
+      includeCurrentRoute: true, // we will trim the breadcrumb of the current route later on
+    })
   );
 
   /**
