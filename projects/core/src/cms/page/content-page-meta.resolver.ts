@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { combineLatest, Observable } from 'rxjs';
+import { filter, map, shareReplay } from 'rxjs/operators';
 import { TranslationService } from '../../i18n/translation.service';
 import { PageType } from '../../model/cms.model';
+import { RoutingPageMetaResolver } from '../../routing/services/routing-page-meta.resolver';
 import { CmsService } from '../facade/cms.service';
 import { BreadcrumbMeta, Page } from '../model/page.model';
 import { PageMetaResolver } from './page-meta.resolver';
@@ -20,14 +21,31 @@ import { PageBreadcrumbResolver, PageTitleResolver } from './page.resolvers';
 })
 export class ContentPageMetaResolver extends PageMetaResolver
   implements PageTitleResolver, PageBreadcrumbResolver {
-  /** helper to provie access to the current CMS page */
+  /** helper to provide access to the current CMS page */
   protected cms$: Observable<Page> = this.cms
     .getCurrentPage()
     .pipe(filter((p) => Boolean(p)));
 
+  private _homeBreadcrumb$: Observable<
+    BreadcrumbMeta[]
+  > = this.translation
+    .translate('common.home')
+    .pipe(map((label) => [{ label: label, link: '/' }] as BreadcrumbMeta[]));
+
+  private _breadcrumbs$ = combineLatest([
+    this._homeBreadcrumb$,
+    this.routingPageMetaResolver.resolveBreadcrumbs(),
+  ]).pipe(
+    map(
+      (breadcrumbs) => breadcrumbs.flat(),
+      shareReplay({ bufferSize: 1, refCount: true })
+    )
+  );
+
   constructor(
     protected cms: CmsService,
-    protected translation: TranslationService
+    protected translation: TranslationService,
+    protected routingPageMetaResolver: RoutingPageMetaResolver
   ) {
     super();
     this.pageType = PageType.CONTENT_PAGE;
@@ -46,8 +64,6 @@ export class ContentPageMetaResolver extends PageMetaResolver
    * The home page label is resolved from the translation service.
    */
   resolveBreadcrumbs(): Observable<BreadcrumbMeta[]> {
-    return this.translation
-      .translate('common.home')
-      .pipe(map((label) => [{ label: label, link: '/' }] as BreadcrumbMeta[]));
+    return this._breadcrumbs$;
   }
 }

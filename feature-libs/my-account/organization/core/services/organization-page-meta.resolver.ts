@@ -10,8 +10,13 @@ import {
   SemanticPathService,
   TranslationService,
 } from '@spartacus/core';
-import { combineLatest, defer, Observable } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
+import { combineLatest, defer, Observable, of } from 'rxjs';
+import {
+  distinctUntilChanged,
+  map,
+  shareReplay,
+  switchMap,
+} from 'rxjs/operators';
 
 /**
  * Resolves the page data for Organization Pages.
@@ -41,63 +46,49 @@ export class OrganizationPageMetaResolver extends ContentPageMetaResolver
   constructor(
     protected cms: CmsService,
     protected translation: TranslationService,
+    protected routingPageMetaResolver: RoutingPageMetaResolver,
     protected semanticPath: SemanticPathService,
-    protected routingService: RoutingService,
-    protected routingPageMetaResolver: RoutingPageMetaResolver
+    protected routingService: RoutingService
   ) {
-    super(cms, translation);
+    super(cms, translation, routingPageMetaResolver);
   }
 
   /**
-   * Breadcrumb of the homepage.
-   */
-  protected homepageBreadcrumb$: Observable<BreadcrumbMeta[]> = defer(() =>
-    super.resolveBreadcrumbs()
-  );
-
-  /**
    * Breadcrumb of the Organization page.
+   * It's empty when the current page is the Organization page.
    */
-  protected organizationBreadcrumb$: Observable<
+  protected organizationPageBreadcrumb$: Observable<
     BreadcrumbMeta[]
-  > = this.translation.translate(this.ORGANIZATION_TRANSLATION_KEY).pipe(
-    map((label) => [
-      {
-        label,
-        link: this.semanticPath.get(this.ORGANIZATION_SEMANTIC_ROUTE),
-      },
-    ])
-  );
-
-  /**
-   * Breadcrumbs calculated from Angular (sub)routes.
-   */
-  protected routesBreadcrumbs$: Observable<BreadcrumbMeta[]> = defer(() =>
-    this.routingPageMetaResolver.resolveBreadcrumbs({
-      includeCurrentRoute: true, // we will trim the breadcrumb of the current route later on
-    })
+  > = this.routingService.getRouterState().pipe(
+    map((routerState) => routerState?.state?.semanticRoute),
+    distinctUntilChanged(),
+    switchMap((semanticRoute) =>
+      semanticRoute === this.ORGANIZATION_SEMANTIC_ROUTE
+        ? of([])
+        : this.translation.translate(this.ORGANIZATION_TRANSLATION_KEY).pipe(
+            map((label) => [
+              {
+                label,
+                link: this.semanticPath.get(this.ORGANIZATION_SEMANTIC_ROUTE),
+              },
+            ])
+          )
+    )
   );
 
   /**
    * Breadcrumbs returned in the method #resolveBreadcrumbs.
    */
-  private breadcrumbs$: Observable<BreadcrumbMeta[]> = combineLatest([
-    this.homepageBreadcrumb$,
-    this.organizationBreadcrumb$,
-    this.routesBreadcrumbs$,
-  ]).pipe(
-    map(
-      ([
-        homepageBreadcrumb,
-        organizationHomepageBreadcrumb,
-        routesBreadcrumbs,
-      ]) => [
-        ...homepageBreadcrumb,
-        ...organizationHomepageBreadcrumb,
-        ...routesBreadcrumbs,
-      ]
-    ),
-    map((routes) => routes.slice(0, -1)), // drop the breadcrumb of the current route (the last one)
+  private breadcrumbs$: Observable<BreadcrumbMeta[]> = defer(() =>
+    combineLatest([
+      this.organizationPageBreadcrumb$,
+      super.resolveBreadcrumbs(),
+    ])
+  ).pipe(
+    map(([organizationPageBreadcrumb, breadcrumbs]) => {
+      const [home, ...restBreadcrumbs] = breadcrumbs;
+      return [home, ...organizationPageBreadcrumb, ...restBreadcrumbs];
+    }),
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
