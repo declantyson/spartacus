@@ -53,8 +53,8 @@ export interface RouteBreadcrumbResolver {
    * @param path the string URL path to the ActivatedRouteSnapshot
    */
   resolveBreadcrumbs(
-    route: ActivatedRouteSnapshot,
+    path: string,
     breadcrumbConfig: RouteBreadcrumbConfig,
-    path: string
+    route: ActivatedRouteSnapshot
   ): Observable<BreadcrumbMeta[]>;
 }

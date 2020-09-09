@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Route, Router } from '@angular/router';
-import { CmsRoute, PageContext, PageType } from '@spartacus/core';
+import { CmsRoute, deepMerge, PageContext, PageType } from '@spartacus/core';
 import { PageLayoutComponent } from '../page/page-layout/page-layout.component';
 import { CmsComponentsService } from './cms-components.service';
 
@@ -52,8 +52,20 @@ export class CmsRoutesImplService {
     const componentRoutes = this.cmsComponentsService.getChildRoutes(
       componentTypes
     );
+
+    const childRoutesHost = this.cmsComponentsService.getChildRoutesHost(
+      componentTypes
+    );
+
     if (componentRoutes.length) {
-      if (this.updateRouting(pageContext, currentPageLabel, componentRoutes)) {
+      if (
+        this.updateRouting(
+          pageContext,
+          currentPageLabel,
+          componentRoutes,
+          childRoutesHost
+        )
+      ) {
         this.router.navigateByUrl(currentUrl);
         return false;
       }
@@ -64,24 +76,28 @@ export class CmsRoutesImplService {
   private updateRouting(
     pageContext: PageContext,
     pageLabel: string,
-    routes: Route[]
+    routes: Route[],
+    childRoutesHost: Pick<Route, 'data'>
   ): boolean {
     if (
       pageContext.type === PageType.CONTENT_PAGE &&
       pageLabel.startsWith('/') &&
       pageLabel.length > 1
     ) {
-      const newRoute: CmsRoute = {
-        path: pageLabel.substr(1),
-        component: PageLayoutComponent,
-        children: routes,
-        data: {
-          cxCmsRouteContext: {
-            type: pageContext.type,
-            id: pageLabel,
+      const newRoute: CmsRoute = deepMerge(
+        {
+          path: pageLabel.substr(1),
+          component: PageLayoutComponent,
+          children: routes,
+          data: {
+            cxCmsRouteContext: {
+              type: pageContext.type,
+              id: pageLabel,
+            },
           },
         },
-      };
+        childRoutesHost ?? {}
+      );
 
       this.router.resetConfig([newRoute, ...this.router.config]);
       return true;

@@ -17,17 +17,10 @@ export abstract class DefaultRouteBreadcrumbResolver
   implements RouteBreadcrumbResolver {
   constructor(protected translation: TranslationService) {}
 
-  /**
-   * Turns the route definition (with its breadcrumb config) into the resolved breadcrumb.
-   *
-   * @param breadcrumbConfig Route's breadcrumb config
-   * @param route The Angular ActivatedRouteSnapshot
-   * @param path the string URL path to the ActivatedRouteSnapshot
-   */
   resolveBreadcrumbs(
-    _route: ActivatedRouteSnapshot,
+    path: string,
     breadcrumbConfig: RouteBreadcrumbConfig,
-    path: string
+    _route: ActivatedRouteSnapshot
   ): Observable<BreadcrumbMeta[]> {
     const label$ = this.resolveParams().pipe(
       switchMap((params) =>

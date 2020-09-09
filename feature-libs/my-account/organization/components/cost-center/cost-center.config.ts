@@ -61,6 +61,15 @@ export const costCenterCmsConfig: CmsConfig = {
   cmsComponents: {
     ManageCostCentersListComponent: {
       component: CostCenterListComponent,
+      childRoutesHost: {
+        data: {
+          cxPageMeta: {
+            breadcrumb: {
+              i18n: 'costCenter.breadcrumbs.list',
+            },
+          },
+        },
+      },
       childRoutes: [
         {
           path: 'create',

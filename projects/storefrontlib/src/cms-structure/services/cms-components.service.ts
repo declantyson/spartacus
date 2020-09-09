@@ -1,12 +1,12 @@
+import { isPlatformServer } from '@angular/common';
 import { Inject, Injectable, Injector, PLATFORM_ID } from '@angular/core';
+import { Route } from '@angular/router';
 import {
   CmsComponentMapping,
   CmsConfig,
   deepMerge,
   DeferLoadingStrategy,
 } from '@spartacus/core';
-import { Route } from '@angular/router';
-import { isPlatformServer } from '@angular/common';
 import { defer, forkJoin, Observable, of } from 'rxjs';
 import { mapTo, share, tap } from 'rxjs/operators';
 import { FeatureModulesService } from './feature-modules.service';
@@ -162,6 +162,23 @@ export class CmsComponentsService {
       }
     }
     return routes;
+  }
+
+  /**
+   * Get host route of the child routes for the components. Returns the first defined host route in the CMS mapping.
+   */
+  getChildRoutesHost(
+    componentTypes: string[]
+  ): CmsComponentMapping['childRoutesHost'] {
+    for (const componentType of componentTypes) {
+      if (this.shouldRender(componentType)) {
+        const hostRoute = this.getMapping(componentType)?.childRoutesHost;
+        if (hostRoute) {
+          return hostRoute;
+        }
+      }
+    }
+    return undefined;
   }
 
   /**
