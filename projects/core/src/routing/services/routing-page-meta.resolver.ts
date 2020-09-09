@@ -37,12 +37,13 @@ export class RoutingPageMetaResolver {
    * It emits on every completed routing navigation.
    */
   resolveBreadcrumbs(
-    options: RoutingBreadcrumbResolverOptions
+    options?: RoutingBreadcrumbResolverOptions
   ): Observable<BreadcrumbMeta[]> {
     return this.activatedRoutesService.routes$.pipe(
+      map((routes) => routes.slice(1, routes.length)), // drop the special `root` route
       map((routes) =>
-        options?.includeCurrentRoute ? routes : routes.slice(0, -1)
-      ), // SPIKE TODO: consider don't take current route (leaf route) into account
+        options?.includeCurrentRoute ? routes : this.trimCurrentRoute(routes)
+      ),
       switchMap((routes) =>
         routes.length
           ? combineLatest(
@@ -50,6 +51,7 @@ export class RoutingPageMetaResolver {
             )
           : of([])
       ),
+
       map((routesBreadcrumbs) => routesBreadcrumbs.flat()),
       shareReplay({ bufferSize: 1, refCount: true })
     );
@@ -61,7 +63,7 @@ export class RoutingPageMetaResolver {
    * It can be used to build URL path not only for the leaf activated route,
    * but also for the intermediate ones, in between the root and the leaf route.
    */
-  protected getPath(activatedRoute: ActivatedRouteSnapshot): string {
+  protected getUrl(activatedRoute: ActivatedRouteSnapshot): string {
     return activatedRoute.pathFromRoot
       .map((route) => route.url.map((urlSegment) => urlSegment.path).join('/'))
       .join('/');
@@ -82,20 +84,20 @@ export class RoutingPageMetaResolver {
   protected resolveRouteBreadcrumb(
     route: ActivatedRouteSnapshot & RouteWithPageMetaConfig
   ): Observable<BreadcrumbMeta[]> {
-    const path = this.getPath(route);
+    const url = this.getUrl(route);
 
-    const breadcrumbConfig = route.data?.cxPageMeta?.breadcrumb;
+    const breadcrumbConfig = route?.routeConfig?.data?.cxPageMeta?.breadcrumb; // don't use `route.data. ...`, because it would inherit parent's `data` when route's path is ''
 
     if (!breadcrumbConfig) {
       return of([]);
     }
 
     if (typeof breadcrumbConfig === 'string') {
-      return of([{ link: path, label: breadcrumbConfig }]);
+      return of([{ link: url, label: breadcrumbConfig }]);
     }
 
     const resolver = this.getBreadcrumbResolver(route);
-    return resolver.resolveBreadcrumbs(path, breadcrumbConfig, route);
+    return resolver.resolveBreadcrumbs(url, breadcrumbConfig, route);
   }
 
   /**
@@ -121,11 +123,71 @@ export class RoutingPageMetaResolver {
 
     // fallback to parent's resolver
     if (route.parent) {
-      // SPIKE TODO: test how it behaves on the root activated route
       return this.getBreadcrumbResolver(route.parent);
     }
 
     // fallback to default, when couldn't find recursively any resolver in ancestors:
     return this.injector.get(DefaultRouteBreadcrumbResolver);
+  }
+
+  /**
+   * By default in breadcrumbs list we don't want to show a link to the current page, so this function
+   * trims the last breadcrumb (the breadcrumb of the current route).
+   *
+   * This function also handles special case when the current route has a configured empty path, but makes
+   * use of the path and the breadcrumb defined in the parent component-less component.
+   *
+   * @example
+   * Suppose we have such URLs:
+   *
+   * |-------------------------------------------------------------------------------------------|
+   * | URL                   | Component                                | Breadcrumbs to display |
+   * |-----------------------|------------------------------------------|------------------------|
+   * | `users/:code`         | UserDetails                              | Home                   |
+   * | `users/:code/friends` | UserDetails + sub-view UserFriends       | Home / Details         |
+   * | `users/:code/edit`    | UserEdit                                 | Home / Details         |
+   * |-------------------------------------------------------------------------------------------|
+   *
+   * And the example router configuration to achieve it is:
+   *
+   * ```
+   * {
+   *    path: 'users/:code',
+   *    // BREADCRUMB_DEF: 'Details',
+   *     children: [
+   *      {
+   *        path: '',
+   *        // NO_BREADCRUMB_DEF,
+   *        component: UserDetails,
+   *        children: [
+   *          {
+   *            path: 'friends',
+   *            component: DetailsFriends
+   *          }
+   *        ]
+   *      },
+   *      {
+   *        path: 'edit',
+   *        component: UserEdit
+   *      }
+   *    ]
+   * }
+   * ```
+   *
+   * In case we activate the route with the component UserDetails, with empty path '', we need to trim
+   * the parent 'users/:code', who actually defines the breadcrumb for the current route.
+   *
+   * But if we activate the sub-route with the component DetailsFriends, which has non-empty path, we like
+   * to trim only the breadcrumb for friends, but keep the breadcrumb for details.
+   */
+  private trimCurrentRoute(
+    routes: ActivatedRouteSnapshot[]
+  ): ActivatedRouteSnapshot[] {
+    // if the last route is '', trim it (and all the close '' ancestors) and also the first non-empty ancestor
+    let i = routes.length - 1;
+    while (routes[i]?.routeConfig?.path === '' && i >= 0) {
+      i--;
+    }
+    return routes.slice(0, i); // element of index _i_ is not included
   }
 }

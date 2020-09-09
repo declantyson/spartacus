@@ -86,52 +86,58 @@ export const costCenterCmsConfig: CmsConfig = {
         },
         {
           path: `:${ROUTE_PARAMS.costCenterCode}`,
-          component: CostCenterDetailsComponent,
           canDeactivate: [SplitViewDeactivateGuard],
           data: {
             cxPageMeta: {
-              breadcrumb: {
-                i18n: 'costCenter.breadcrumbs.details',
-              },
+              breadcrumb: { i18n: 'costCenter.breadcrumbs.details' },
             },
           },
           children: [
             {
-              path: 'budgets',
-              component: CostCenterBudgetListComponent,
+              path: '',
+              component: CostCenterDetailsComponent,
               canDeactivate: [SplitViewDeactivateGuard],
-              data: {
-                cxPageMeta: {
-                  breadcrumb: {
-                    i18n: 'costCenter.breadcrumbs.budgets',
-                  },
-                },
-              },
+
               children: [
                 {
-                  path: 'assign',
-                  component: CostCenterAssignBudgetsComponent,
+                  path: 'budgets',
+                  component: CostCenterBudgetListComponent,
                   canDeactivate: [SplitViewDeactivateGuard],
                   data: {
                     cxPageMeta: {
                       breadcrumb: {
-                        i18n: 'costCenter.breadcrumbs.assignBudgets',
+                        i18n: 'costCenter.breadcrumbs.budgets',
                       },
                     },
                   },
+                  children: [
+                    {
+                      path: 'assign',
+                      component: CostCenterAssignBudgetsComponent,
+                      canDeactivate: [SplitViewDeactivateGuard],
+                      data: {
+                        cxPageMeta: {
+                          breadcrumb: {
+                            i18n: 'costCenter.breadcrumbs.assignBudgets',
+                          },
+                        },
+                      },
+                    },
+                  ],
                 },
               ],
             },
-          ],
-        },
-        {
-          path: `:${ROUTE_PARAMS.costCenterCode}/edit`,
-          component: CostCenterEditComponent,
-          data: {
-            pageMeta: {
-              breadcrumb: { i18n: 'costCenter.breadcrumbs.edit' },
+            {
+              path: `edit`,
+              component: CostCenterEditComponent,
+              canDeactivate: [SplitViewDeactivateGuard],
+              data: {
+                pageMeta: {
+                  breadcrumb: { i18n: 'costCenter.breadcrumbs.edit' },
+                },
+              },
             },
-          },
+          ],
         },
       ],
       guards: [AuthGuard],
