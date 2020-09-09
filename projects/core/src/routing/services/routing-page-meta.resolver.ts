@@ -73,7 +73,8 @@ export class RoutingPageMetaResolver {
    * - When the breadcrumb config is a string, the resolved breadcrumb is this string.
    * - When the breadcrumb config contains the property `resolver` with `RouteBreadcrumbResolver` class,
    *    resolving is delegated to it.
-   * - Otherwise, resolving is delegated to the `DefaultRouteBreadcrumbResolver`.
+   * - Otherwise, it delegates resolving to the the closest defined resolver defined in the ancestors routes
+   * - If no ancestor defines resolver, resolving is delegated to `DefaultRouteBreadcrumbResolver`
    *
    * @see `RouteBreadcrumbResolver`
    * @see `DefaultRouteBreadcrumbResolver`
@@ -93,10 +94,38 @@ export class RoutingPageMetaResolver {
       return of([{ link: path, label: breadcrumbConfig }]);
     }
 
-    const resolver: RouteBreadcrumbResolver =
-      this.injector.get(breadcrumbConfig.resolver, null) ||
-      this.injector.get(DefaultRouteBreadcrumbResolver, null);
-
+    const resolver = this.getBreadcrumbResolver(route);
     return resolver.resolveBreadcrumbs(path, breadcrumbConfig, route);
+  }
+
+  /**
+   * Returns the RouteBreadcrumbResolver for the given activate route.
+   *
+   * * When no resolver defined, it tries to find recursively the closest the resolver in the route's ancestors.
+   * * When no ancestor defines the resolver, it fallbacks to the `DefaultRouteBreadcrumbResolver`.
+   */
+  protected getBreadcrumbResolver(
+    route: ActivatedRouteSnapshot & RouteWithPageMetaConfig
+  ): RouteBreadcrumbResolver {
+    const breadcrumbConfig = route.data?.cxPageMeta?.breadcrumb;
+
+    if (typeof breadcrumbConfig !== 'string' && breadcrumbConfig?.resolver) {
+      const resolver = this.injector.get(
+        breadcrumbConfig.resolver,
+        null
+      ) as RouteBreadcrumbResolver;
+      if (resolver) {
+        return resolver;
+      }
+    }
+
+    // fallback to parent's resolver
+    if (route.parent) {
+      // SPIKE TODO: test how it behaves on the root activated route
+      return this.getBreadcrumbResolver(route.parent);
+    }
+
+    // fallback to default, when couldn't find recursively any resolver in ancestors:
+    return this.injector.get(DefaultRouteBreadcrumbResolver);
   }
 }

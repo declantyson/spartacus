@@ -48,9 +48,9 @@ export interface RouteBreadcrumbResolver {
   /**
    * Turns the route definition (with its breadcrumb config) into the resolved breadcrumb.
    *
-   * @param route The Angular ActivatedRouteSnapshot
-   * @param breadcrumbConfig Route's breadcrumb config
    * @param path the string URL path to the ActivatedRouteSnapshot
+   * @param breadcrumbConfig Route's breadcrumb config
+   * @param route The Angular ActivatedRouteSnapshot
    */
   resolveBreadcrumbs(
     path: string,

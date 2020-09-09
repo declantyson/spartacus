@@ -66,6 +66,7 @@ export const costCenterCmsConfig: CmsConfig = {
           cxPageMeta: {
             breadcrumb: {
               i18n: 'costCenter.breadcrumbs.list',
+              resolver: CostCenterRouteBreadcrumbResolver,
             },
           },
         },
@@ -91,7 +92,6 @@ export const costCenterCmsConfig: CmsConfig = {
             cxPageMeta: {
               breadcrumb: {
                 i18n: 'costCenter.breadcrumbs.details',
-                resolver: CostCenterRouteBreadcrumbResolver,
               },
             },
           },
@@ -104,7 +104,6 @@ export const costCenterCmsConfig: CmsConfig = {
                 cxPageMeta: {
                   breadcrumb: {
                     i18n: 'costCenter.breadcrumbs.budgets',
-                    resolver: CostCenterRouteBreadcrumbResolver,
                   },
                 },
               },
@@ -117,7 +116,6 @@ export const costCenterCmsConfig: CmsConfig = {
                     cxPageMeta: {
                       breadcrumb: {
                         i18n: 'costCenter.breadcrumbs.assignBudgets',
-                        resolver: CostCenterRouteBreadcrumbResolver,
                       },
                     },
                   },
