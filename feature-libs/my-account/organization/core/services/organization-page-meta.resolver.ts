@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import {
   BreadcrumbMeta,
-  CmsService,
   ContentPageMetaResolver,
   PageBreadcrumbResolver,
+  PageMetaResolver,
   PageTitleResolver,
-  RoutingPageMetaResolver,
+  PageType,
   RoutingService,
   SemanticPathService,
   TranslationService,
@@ -29,9 +29,10 @@ import {
 @Injectable({
   providedIn: 'root',
 })
-export class OrganizationPageMetaResolver extends ContentPageMetaResolver
+export class OrganizationPageMetaResolver extends PageMetaResolver
   implements PageBreadcrumbResolver, PageTitleResolver {
   pageTemplate = 'CompanyPageTemplate';
+  pageType = PageType.CONTENT_PAGE;
 
   /**
    * Translation key for the breadcrumb of Organization home page
@@ -44,13 +45,12 @@ export class OrganizationPageMetaResolver extends ContentPageMetaResolver
   protected readonly ORGANIZATION_SEMANTIC_ROUTE = 'organization';
 
   constructor(
-    protected cms: CmsService,
+    protected contentPageMetaResolver: ContentPageMetaResolver,
     protected translation: TranslationService,
-    protected routingPageMetaResolver: RoutingPageMetaResolver,
     protected semanticPath: SemanticPathService,
     protected routingService: RoutingService
   ) {
-    super(cms, translation, routingPageMetaResolver);
+    super();
   }
 
   /**
@@ -59,7 +59,7 @@ export class OrganizationPageMetaResolver extends ContentPageMetaResolver
    */
   protected organizationPageBreadcrumb$: Observable<
     BreadcrumbMeta[]
-  > = this.routingService.getRouterState().pipe(
+  > = defer(() => this.routingService.getRouterState()).pipe(
     map((routerState) => routerState?.state?.semanticRoute),
     distinctUntilChanged(),
     switchMap((semanticRoute) =>
@@ -79,12 +79,10 @@ export class OrganizationPageMetaResolver extends ContentPageMetaResolver
   /**
    * Breadcrumbs returned in the method #resolveBreadcrumbs.
    */
-  private breadcrumbs$: Observable<BreadcrumbMeta[]> = defer(() =>
-    combineLatest([
-      this.organizationPageBreadcrumb$,
-      super.resolveBreadcrumbs(),
-    ])
-  ).pipe(
+  private breadcrumbs$: Observable<BreadcrumbMeta[]> = combineLatest([
+    this.organizationPageBreadcrumb$,
+    defer(() => this.contentPageMetaResolver.resolveBreadcrumbs()),
+  ]).pipe(
     map(([organizationPageBreadcrumb, breadcrumbs]) => {
       const [home, ...restBreadcrumbs] = breadcrumbs;
       return [home, ...organizationPageBreadcrumb, ...restBreadcrumbs];
@@ -101,5 +99,9 @@ export class OrganizationPageMetaResolver extends ContentPageMetaResolver
    */
   resolveBreadcrumbs(): Observable<BreadcrumbMeta[]> {
     return this.breadcrumbs$;
+  }
+
+  resolveTitle(): Observable<string> {
+    return this.contentPageMetaResolver.resolveTitle();
   }
 }
