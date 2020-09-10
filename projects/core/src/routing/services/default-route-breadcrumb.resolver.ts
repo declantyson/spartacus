@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { BreadcrumbMeta } from '../../cms/model/page.model';
@@ -19,8 +18,7 @@ export abstract class DefaultRouteBreadcrumbResolver
 
   resolveBreadcrumbs(
     path: string,
-    breadcrumbConfig: RouteBreadcrumbConfig,
-    _route: ActivatedRouteSnapshot
+    breadcrumbConfig: RouteBreadcrumbConfig
   ): Observable<BreadcrumbMeta[]> {
     const label$ = this.resolveParams().pipe(
       switchMap((params) =>
