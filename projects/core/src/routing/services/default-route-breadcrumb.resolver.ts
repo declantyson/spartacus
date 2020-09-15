@@ -20,10 +20,13 @@ export abstract class DefaultRouteBreadcrumbResolver
     path: string,
     breadcrumbConfig: RouteBreadcrumbConfig
   ): Observable<BreadcrumbMeta[]> {
+    const i18nKey =
+      typeof breadcrumbConfig === 'string'
+        ? breadcrumbConfig
+        : breadcrumbConfig.i18n;
+
     const label$ = this.resolveParams().pipe(
-      switchMap((params) =>
-        this.translation.translate(breadcrumbConfig.i18n, params ?? {})
-      )
+      switchMap((params) => this.translation.translate(i18nKey, params ?? {}))
     );
 
     return label$.pipe(map((label) => [{ label, link: path }]));

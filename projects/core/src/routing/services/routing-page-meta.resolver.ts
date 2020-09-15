@@ -86,14 +86,18 @@ export class RoutingPageMetaResolver {
   ): Observable<BreadcrumbMeta[]> {
     const url = this.getUrl(route);
 
-    const breadcrumbConfig = route?.routeConfig?.data?.cxPageMeta?.breadcrumb; // don't use `route.data. ...`, because it would inherit parent's `data` when route's path is ''
+    // Note: we use `route.routeConfig.data` (not `route.data`). Otherwise it could work incorrect
+    // for route with path '', who is a child of path-full parent route. It's because
+    // in Angular routes with empty path inherit the `data` from the parent route.
+    // But in our case we don't want the inheritance of the breadcrumb definitions.
+    const breadcrumbConfig = route?.routeConfig?.data?.cxPageMeta?.breadcrumb;
 
     if (!breadcrumbConfig) {
       return of([]);
     }
 
-    if (typeof breadcrumbConfig === 'string') {
-      return of([{ link: url, label: breadcrumbConfig }]);
+    if (typeof breadcrumbConfig !== 'string' && breadcrumbConfig.raw) {
+      return of([{ link: url, label: breadcrumbConfig.raw }]);
     }
 
     const resolver = this.getBreadcrumbResolver(route);
@@ -126,7 +130,7 @@ export class RoutingPageMetaResolver {
       return this.getBreadcrumbResolver(route.parent);
     }
 
-    // fallback to default, when couldn't find recursively any resolver in ancestors:
+    // fallback to default, when couldn't find recursively any parent's resolver
     return this.injector.get(DefaultRouteBreadcrumbResolver);
   }
 
@@ -134,60 +138,23 @@ export class RoutingPageMetaResolver {
    * By default in breadcrumbs list we don't want to show a link to the current page, so this function
    * trims the last breadcrumb (the breadcrumb of the current route).
    *
-   * This function also handles special case when the current route has a configured empty path, but makes
-   * use of the path and the breadcrumb defined in the parent component-less component.
-   *
-   * @example
-   * Suppose we have such URLs:
-   *
-   * |-------------------------------------------------------------------------------------------|
-   * | URL                   | Component                                | Breadcrumbs to display |
-   * |-----------------------|------------------------------------------|------------------------|
-   * | `users/:code`         | UserDetails                              | Home                   |
-   * | `users/:code/friends` | UserDetails + sub-view UserFriends       | Home / Details         |
-   * | `users/:code/edit`    | UserEdit                                 | Home / Details         |
-   * |-------------------------------------------------------------------------------------------|
-   *
-   * And the example router configuration to achieve it is:
-   *
-   * ```
-   * {
-   *    path: 'users/:code',
-   *    // BREADCRUMB_DEF: 'Details',
-   *     children: [
-   *      {
-   *        path: '',
-   *        // NO_BREADCRUMB_DEF,
-   *        component: UserDetails,
-   *        children: [
-   *          {
-   *            path: 'friends',
-   *            component: DetailsFriends
-   *          }
-   *        ]
-   *      },
-   *      {
-   *        path: 'edit',
-   *        component: UserEdit
-   *      }
-   *    ]
-   * }
-   * ```
-   *
-   * In case we activate the route with the component UserDetails, with empty path '', we need to trim
-   * the parent 'users/:code', who actually defines the breadcrumb for the current route.
-   *
-   * But if we activate the sub-route with the component DetailsFriends, which has non-empty path, we like
-   * to trim only the breadcrumb for friends, but keep the breadcrumb for details.
+   * This function also handles special case when the current route has a configured empty path ('' route).
+   * In that case, we trim not only the last route, but also the parent path-wise route (who likely defines
+   * the breadcrumb).
    */
   private trimCurrentRoute(
     routes: ActivatedRouteSnapshot[]
   ): ActivatedRouteSnapshot[] {
-    // if the last route is '', trim it (and all the close '' ancestors) and also the first non-empty ancestor
+    // If the last route is '', we trim:
+    // - the '' route
+    // - any '' routes in the short ancestors line - if any exist
+
     let i = routes.length - 1;
     while (routes[i]?.routeConfig?.path === '' && i >= 0) {
       i--;
     }
-    return routes.slice(0, i); // element of index _i_ is not included
+
+    // Finally we slice the last route with non-empty path (not '')
+    return routes.slice(0, i); // return elements from 0 to i-1
   }
 }

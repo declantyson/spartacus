@@ -79,9 +79,7 @@ export const costCenterCmsConfig: CmsConfig = {
             canDeactivate: [SplitViewDeactivateGuard],
             data: {
               cxPageMeta: {
-                breadcrumb: {
-                  i18n: 'costCenter.breadcrumbs.create',
-                },
+                breadcrumb: 'costCenter.breadcrumbs.create',
               },
             },
           },
@@ -90,7 +88,7 @@ export const costCenterCmsConfig: CmsConfig = {
             canDeactivate: [SplitViewDeactivateGuard],
             data: {
               cxPageMeta: {
-                breadcrumb: { i18n: 'costCenter.breadcrumbs.details' },
+                breadcrumb: 'costCenter.breadcrumbs.details',
               },
             },
             children: [
@@ -106,9 +104,7 @@ export const costCenterCmsConfig: CmsConfig = {
                     canDeactivate: [SplitViewDeactivateGuard],
                     data: {
                       cxPageMeta: {
-                        breadcrumb: {
-                          i18n: 'costCenter.breadcrumbs.budgets',
-                        },
+                        breadcrumb: 'costCenter.breadcrumbs.budgets',
                       },
                     },
                     children: [
@@ -118,9 +114,7 @@ export const costCenterCmsConfig: CmsConfig = {
                         canDeactivate: [SplitViewDeactivateGuard],
                         data: {
                           cxPageMeta: {
-                            breadcrumb: {
-                              i18n: 'costCenter.breadcrumbs.assignBudgets',
-                            },
+                            breadcrumb: 'costCenter.breadcrumbs.assignBudgets',
                           },
                         },
                       },
@@ -134,7 +128,7 @@ export const costCenterCmsConfig: CmsConfig = {
                 canDeactivate: [SplitViewDeactivateGuard],
                 data: {
                   pageMeta: {
-                    breadcrumb: { i18n: 'costCenter.breadcrumbs.edit' },
+                    breadcrumb: 'costCenter.breadcrumbs.edit',
                   },
                 },
               },
