@@ -3,9 +3,12 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
 import { BreadcrumbMeta } from '../../cms/model/page.model';
 
-export interface RouteWithPageMetaConfig {
-  data?: {
-    cxPageMeta?: RoutePageMetaConfig;
+export interface ActivatedRouteSnapshotWithPageMeta
+  extends ActivatedRouteSnapshot {
+  routeConfig: ActivatedRouteSnapshot['routeConfig'] & {
+    data?: ActivatedRouteSnapshot['routeConfig']['data'] & {
+      cxPageMeta?: RoutePageMetaConfig;
+    };
   };
 }
 
@@ -60,7 +63,7 @@ export interface RouteBreadcrumbResolver {
    */
   resolveBreadcrumbs(
     url: string,
-    breadcrumbConfig: RouteBreadcrumbConfig,
+    breadcrumbConfig: string | RouteBreadcrumbConfig,
     route: ActivatedRouteSnapshot
   ): Observable<BreadcrumbMeta[]>;
 }

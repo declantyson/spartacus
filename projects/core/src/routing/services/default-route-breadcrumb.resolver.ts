@@ -18,7 +18,7 @@ export abstract class DefaultRouteBreadcrumbResolver
 
   resolveBreadcrumbs(
     path: string,
-    breadcrumbConfig: RouteBreadcrumbConfig
+    breadcrumbConfig: string | RouteBreadcrumbConfig
   ): Observable<BreadcrumbMeta[]> {
     const i18nKey =
       typeof breadcrumbConfig === 'string'
