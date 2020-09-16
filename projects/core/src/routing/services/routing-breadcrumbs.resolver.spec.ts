@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { BreadcrumbMeta } from '../../cms';
 import { I18nTestingModule } from '../../i18n/testing/i18n-testing.module';
 import { DefaultRouteBreadcrumbResolver } from './default-route-breadcrumb.resolver';
 import {
@@ -12,34 +13,46 @@ import { RoutingBreadcrumbsResolver } from './routing-breadcrumbs.resolver';
 
 class MockDefaultRouteBreadcrumbResolver
   implements Partial<DefaultRouteBreadcrumbResolver> {
-  resolveBreadcrumbs(
-    url: string,
-    breadcrumbsConfig: string | RouteBreadcrumbConfig
-  ) {
-    const label =
-      typeof breadcrumbsConfig === 'string'
-        ? breadcrumbsConfig
-        : breadcrumbsConfig?.i18n;
-    return of([{ link: url, label }]);
-  }
+  resolveBreadcrumbs = jasmine
+    .createSpy('CustomResolver.resolveBreadcrumbs')
+    .and.callFake(
+      (
+        url: string,
+        breadcrumbsConfig: string | RouteBreadcrumbConfig
+      ): Observable<BreadcrumbMeta[]> => {
+        const label =
+          typeof breadcrumbsConfig === 'string'
+            ? breadcrumbsConfig
+            : breadcrumbsConfig?.i18n;
+        return of([{ link: url, label }]);
+      }
+    );
 }
 
-class CustomResolver implements RouteBreadcrumbResolver {
-  resolveBreadcrumbs(
-    url: string,
-    breadcrumbsConfig: string | RouteBreadcrumbConfig
-  ) {
-    const label =
-      typeof breadcrumbsConfig === 'string'
-        ? breadcrumbsConfig
-        : breadcrumbsConfig?.i18n;
+class CustomRouteBreadcrumbResolver implements RouteBreadcrumbResolver {
+  resolveBreadcrumbs = jasmine
+    .createSpy('CustomResolver.resolveBreadcrumbs')
+    .and.callFake(
+      (
+        url: string,
+        breadcrumbsConfig: string | RouteBreadcrumbConfig
+      ): Observable<BreadcrumbMeta[]> => {
+        const label =
+          typeof breadcrumbsConfig === 'string'
+            ? breadcrumbsConfig
+            : breadcrumbsConfig?.i18n;
 
-    return of([{ label: `custom.${label}`, link: url }]);
-  }
+        return of([{ label: `custom.${label}`, link: url }]);
+      }
+    );
 }
 
 describe('RoutingBreadcrumbsResolver', () => {
   let resolver: RoutingBreadcrumbsResolver;
+
+  // using general interface below, to avoid implementation-specific typing issues:
+  let defaultResolver: RouteBreadcrumbResolver;
+  let customResolver: RouteBreadcrumbResolver;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -49,10 +62,12 @@ describe('RoutingBreadcrumbsResolver', () => {
           provide: DefaultRouteBreadcrumbResolver,
           useClass: MockDefaultRouteBreadcrumbResolver,
         },
-        CustomResolver,
+        CustomRouteBreadcrumbResolver,
       ],
     });
     resolver = TestBed.inject(RoutingBreadcrumbsResolver);
+    defaultResolver = TestBed.inject(DefaultRouteBreadcrumbResolver);
+    customResolver = TestBed.inject(CustomRouteBreadcrumbResolver);
   });
 
   describe(`resolveBreadcrumbs`, () => {
@@ -75,6 +90,7 @@ describe('RoutingBreadcrumbsResolver', () => {
       expect(
         await resolver.resolveBreadcrumbs(testRoutes).pipe(take(1)).toPromise()
       ).toEqual([]);
+      expect(defaultResolver.resolveBreadcrumbs).not.toHaveBeenCalled();
     });
 
     it(`should NOT return breadcrumb for the current route '(case with '' path)`, async () => {
@@ -93,6 +109,7 @@ describe('RoutingBreadcrumbsResolver', () => {
       expect(
         await resolver.resolveBreadcrumbs(testRoutes).pipe(take(1)).toPromise()
       ).toEqual([]);
+      expect(defaultResolver.resolveBreadcrumbs).not.toHaveBeenCalled();
     });
 
     it(`should return breadcrumbs only for the ancestor routes`, async () => {
@@ -120,9 +137,19 @@ describe('RoutingBreadcrumbsResolver', () => {
       expect(
         await resolver.resolveBreadcrumbs(testRoutes).pipe(take(1)).toPromise()
       ).toEqual([
-        { link: 'grandparent', label: 'grandparent.breadcrumb' },
-        { link: 'grandparent/parent', label: 'parent.breadcrumb' },
+        { link: '/grandparent', label: 'grandparent.breadcrumb' },
+        { link: '/grandparent/parent', label: 'parent.breadcrumb' },
       ]);
+      expect(defaultResolver.resolveBreadcrumbs).toHaveBeenCalledWith(
+        '/grandparent',
+        testRoutes[0].routeConfig.data.cxPageMeta.breadcrumb,
+        testRoutes[0]
+      );
+      expect(defaultResolver.resolveBreadcrumbs).toHaveBeenCalledWith(
+        '/grandparent/parent',
+        testRoutes[1].routeConfig.data.cxPageMeta.breadcrumb,
+        testRoutes[1]
+      );
     });
 
     it(`should return breadcrumbs only for the ancestor routes (case with '' path)`, async () => {
@@ -153,8 +180,8 @@ describe('RoutingBreadcrumbsResolver', () => {
       expect(
         await resolver.resolveBreadcrumbs(testRoutes).pipe(take(1)).toPromise()
       ).toEqual([
-        { link: 'grandparent', label: 'grandparent.breadcrumb' },
-        { link: 'grandparent/parent', label: 'parent.breadcrumb' },
+        { link: '/grandparent', label: 'grandparent.breadcrumb' },
+        { link: '/grandparent/parent', label: 'parent.breadcrumb' },
       ]);
     });
 
@@ -187,9 +214,9 @@ describe('RoutingBreadcrumbsResolver', () => {
             .pipe(take(1))
             .toPromise()
         ).toEqual([
-          { link: 'grandparent', label: 'grandparent.breadcrumb' },
-          { link: 'grandparent/parent', label: 'parent.breadcrumb' },
-          { link: 'grandparent/parent/child', label: 'child.breadcrumb' },
+          { link: '/grandparent', label: 'grandparent.breadcrumb' },
+          { link: '/grandparent/parent', label: 'parent.breadcrumb' },
+          { link: '/grandparent/parent/child', label: 'child.breadcrumb' },
         ]);
       });
     });
@@ -204,7 +231,7 @@ describe('RoutingBreadcrumbsResolver', () => {
             cxPageMeta: {
               breadcrumb: {
                 i18n: 'parent.breadcrumb',
-                resolver: CustomResolver,
+                resolver: CustomRouteBreadcrumbResolver,
               },
             },
           },
@@ -217,7 +244,13 @@ describe('RoutingBreadcrumbsResolver', () => {
 
     expect(
       await resolver.resolveBreadcrumbs(testRoutes).pipe(take(1)).toPromise()
-    ).toEqual([{ link: 'parent', label: 'custom.parent.breadcrumb' }]);
+    ).toEqual([{ link: '/parent', label: 'custom.parent.breadcrumb' }]);
+
+    expect(customResolver.resolveBreadcrumbs).toHaveBeenCalledWith(
+      '/parent',
+      testRoutes[0].routeConfig.data.cxPageMeta.breadcrumb,
+      testRoutes[0]
+    );
   });
 
   it(`should try to find the closest resolver defined by the ancestor routes`, async () => {
@@ -229,7 +262,7 @@ describe('RoutingBreadcrumbsResolver', () => {
             cxPageMeta: {
               breadcrumb: {
                 i18n: 'grandparent.breadcrumb',
-                resolver: CustomResolver,
+                resolver: CustomRouteBreadcrumbResolver,
               },
             },
           },
@@ -255,9 +288,10 @@ describe('RoutingBreadcrumbsResolver', () => {
         .pipe(take(1))
         .toPromise()
     ).toEqual([
-      { link: 'grandparent', label: 'custom.grandparent.breadcrumb' },
-      { link: 'grandparent/parent', label: 'custom.parent.breadcrumb' },
-      { link: 'grandparent/parent/child', label: 'custom.child.breadcrumb' },
+      { link: '/grandparent', label: 'custom.grandparent.breadcrumb' },
+      { link: '/grandparent/parent', label: 'custom.parent.breadcrumb' },
+      { link: '/grandparent/parent/child', label: 'custom.child.breadcrumb' },
     ]);
+    expect(customResolver.resolveBreadcrumbs).toHaveBeenCalledTimes(3);
   });
 });

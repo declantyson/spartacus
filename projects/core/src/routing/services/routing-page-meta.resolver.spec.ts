@@ -49,7 +49,7 @@ describe('RoutingPageMetaResolver', () => {
   });
 
   describe('resolveBreadcrumbs', () => {
-    it('should call RoutingBreadcrumbsResolver with all activated routes but not root route', async () => {
+    it('should call RoutingBreadcrumbsResolver with all activated routes, but not root route', async () => {
       const options: RoutingBreadcrumbsResolverOptions = {
         includeCurrentRoute: false,
       };

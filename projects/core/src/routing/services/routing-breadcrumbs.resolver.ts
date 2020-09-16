@@ -56,9 +56,17 @@ export class RoutingBreadcrumbsResolver {
    * It concatenates their url segments, separating them with slash.
    */
   protected getUrl(routes: ActivatedRouteSnapshot[]): string {
-    return routes
-      .map((route) => route.url.map((urlSegment) => urlSegment.path).join('/'))
-      .join('/');
+    return (
+      '/' + // prepend slash to make the final url absolute
+      routes
+        .map((route) =>
+          route.url.map((urlSegment) => urlSegment.path).join('/')
+        )
+        // Some activated routes may have configured an empty path ''. We filter them out.
+        // Otherwise it would generate double slash ...//... in the url.
+        .filter((urlPart) => !!urlPart)
+        .join('/')
+    );
   }
 
   /**
