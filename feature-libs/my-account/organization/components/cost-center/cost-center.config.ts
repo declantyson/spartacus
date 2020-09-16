@@ -4,6 +4,7 @@ import {
   ParamsMapping,
   RoutingConfig,
 } from '@spartacus/core';
+import { AdminGuard } from '@spartacus/my-account/organization/core';
 import {
   BREAKPOINT,
   SplitViewDeactivateGuard,
@@ -16,7 +17,7 @@ import { CostCenterBudgetListComponent } from './budgets/list/cost-center-budget
 import { CostCenterRouteBreadcrumbResolver } from './cost-center-route-breadcrumb.resolver';
 import { CostCenterCreateComponent } from './create/cost-center-create.component';
 import { CostCenterDetailsComponent } from './details/cost-center-details.component';
-import { CostCenterEditComponent } from './edit/cost-center-edit.component';
+import { ExistCostCenterGuard } from './guards/exist-cost-center.guard';
 import { CostCenterListComponent } from './list/cost-center-list.component';
 
 // TODO:#my-account-architecture - Number.MAX_VALUE?
@@ -85,16 +86,18 @@ export const costCenterCmsConfig: CmsConfig = {
           },
           {
             path: `:${ROUTE_PARAMS.costCenterCode}`,
-            canDeactivate: [SplitViewDeactivateGuard],
             data: {
               cxPageMeta: {
                 breadcrumb: 'costCenter.breadcrumbs.details',
               },
             },
+            component: CostCenterDetailsComponent,
+            canActivate: [ExistCostCenterGuard],
+            canDeactivate: [SplitViewDeactivateGuard],
+
             children: [
               {
                 path: '',
-                component: CostCenterDetailsComponent,
                 canDeactivate: [SplitViewDeactivateGuard],
 
                 children: [
@@ -122,21 +125,11 @@ export const costCenterCmsConfig: CmsConfig = {
                   },
                 ],
               },
-              {
-                path: `edit`,
-                component: CostCenterEditComponent,
-                canDeactivate: [SplitViewDeactivateGuard],
-                data: {
-                  pageMeta: {
-                    breadcrumb: 'costCenter.breadcrumbs.edit',
-                  },
-                },
-              },
             ],
           },
         ],
       },
-      guards: [AuthGuard],
+      guards: [AuthGuard, AdminGuard],
     },
   },
 };

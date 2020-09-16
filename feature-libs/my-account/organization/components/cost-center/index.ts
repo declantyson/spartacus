@@ -7,4 +7,5 @@ export * from './current-cost-center.service';
 export * from './details/index';
 export * from './edit/index';
 export * from './form/index';
+export * from './guards/index';
 export * from './list/index';
