@@ -16,10 +16,7 @@ export class CmsRoutesImplService {
   constructor(
     private router: Router,
     private cmsComponentsService: CmsComponentsService
-  ) {
-    // SPIKE TODO REMOVE
-    window['router'] = router;
-  }
+  ) {}
 
   private cmsRouteExists(url: string): boolean {
     const isCmsDrivenRoute = url.startsWith('/');

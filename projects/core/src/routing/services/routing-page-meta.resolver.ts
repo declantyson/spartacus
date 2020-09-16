@@ -9,8 +9,7 @@ import {
 } from './routing-breadcrumbs.resolver';
 
 /**
- * Resolves the page meta based on the Angular Activated Route
- * (or even child routes).
+ * Resolves the page meta based on the Angular Activated Routes
  */
 @Injectable({
   providedIn: 'root',

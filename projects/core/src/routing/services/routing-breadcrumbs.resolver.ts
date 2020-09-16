@@ -109,7 +109,7 @@ export class RoutingBreadcrumbsResolver {
   ): RouteBreadcrumbResolver {
     const routes = [...ancestorRoutes, route];
 
-    // try to inject the first defined resolver, start for the current route
+    // try to inject the first defined resolver, start from the current route, fallback to ancestors
     for (let i = routes.length - 1; i >= 0; i--) {
       const breadcrumbConfig = this.getBreadcrumbConfig(routes[i]);
 
