@@ -7,6 +7,7 @@ import { TranslationService } from '../../i18n';
 import { DefaultRouteBreadcrumbResolver } from './default-route-breadcrumb.resolver';
 import {
   ActivatedRouteSnapshotWithPageMeta,
+  RouteBreadcrumbConfig,
   RouteBreadcrumbResolver,
 } from './route-page-meta.model';
 
@@ -21,9 +22,7 @@ export interface RoutingBreadcrumbsResolverOptions {
  * Resolves the page meta based on the Angular Activated Route
  * (or even child routes).
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class RoutingBreadcrumbsResolver {
   constructor(
     protected injector: Injector,
@@ -44,19 +43,20 @@ export class RoutingBreadcrumbsResolver {
 
     return routes.length
       ? combineLatest(
-          routes.map((route) => this.resolveRouteBreadcrumb(route))
+          routes.map((route, index) =>
+            this.resolveRouteBreadcrumb(route, routes.slice(0, index))
+          )
         ).pipe(map((breadcrumbArrays) => breadcrumbArrays.flat()))
       : of([]);
   }
 
   /**
-   * Returns the URL path for the given activated route.
+   * Returns the URL path for the given array of activated routes.
    *
-   * It can be used to build URL path not only for the leaf activated route,
-   * but also for the intermediate ones, in between the root and the leaf route.
+   * It concatenates their url segments, separating them with slash.
    */
-  protected getUrl(activatedRoute: ActivatedRouteSnapshot): string {
-    return activatedRoute.pathFromRoot
+  protected getUrl(routes: ActivatedRouteSnapshot[]): string {
+    return routes
       .map((route) => route.url.map((urlSegment) => urlSegment.path).join('/'))
       .join('/');
   }
@@ -64,7 +64,6 @@ export class RoutingBreadcrumbsResolver {
   /**
    * Resolves breadcrumbs based on the breadcrumb config placed in Route's `data` property.
    *
-   * - When the breadcrumb config is a string, the resolved breadcrumb is this string.
    * - When the breadcrumb config contains the property `resolver` with `RouteBreadcrumbResolver` class,
    *    resolving is delegated to it.
    * - Otherwise, it delegates resolving to the the closest defined resolver defined in the ancestors routes
@@ -72,27 +71,18 @@ export class RoutingBreadcrumbsResolver {
    *
    * @see `RouteBreadcrumbResolver`
    * @see `DefaultRouteBreadcrumbResolver`
+   *
+   * @param route route to resolve
+   * @param ancestorRoutes ancestor routes of the route to resolve
    */
   protected resolveRouteBreadcrumb(
-    route: ActivatedRouteSnapshotWithPageMeta
+    route: ActivatedRouteSnapshotWithPageMeta,
+    ancestorRoutes: ActivatedRouteSnapshotWithPageMeta[]
   ): Observable<BreadcrumbMeta[]> {
-    const url = this.getUrl(route);
+    const url = this.getUrl([...ancestorRoutes, route]);
+    const breadcrumbConfig = this.getBreadcrumbConfig(route);
 
-    // Note: we use `route.routeConfig.data` (not `route.data`). Otherwise it could work incorrect
-    // for route with path '', who is a child of path-full parent route. It's because
-    // in Angular routes with empty path inherit the `data` from the parent route.
-    // But in our case we don't want the inheritance of `data`.
-    const breadcrumbConfig = route?.routeConfig?.data?.cxPageMeta?.breadcrumb;
-
-    if (!breadcrumbConfig) {
-      return of([]);
-    }
-
-    if (typeof breadcrumbConfig !== 'string' && breadcrumbConfig.raw) {
-      return of([{ link: url, label: breadcrumbConfig.raw }]);
-    }
-
-    const resolver = this.getBreadcrumbResolver(route);
+    const resolver = this.getBreadcrumbResolver(route, ancestorRoutes);
     return resolver.resolveBreadcrumbs(url, breadcrumbConfig, route);
   }
 
@@ -101,28 +91,31 @@ export class RoutingBreadcrumbsResolver {
    *
    * * When no resolver defined, it tries to find recursively the closest the resolver in the route's ancestors.
    * * When no ancestor defines the resolver, it fallbacks to the `DefaultRouteBreadcrumbResolver`.
+   *
+   * @param route route to resolve
+   * @param ancestorRoutes ancestor routes of the route to resolve
    */
   protected getBreadcrumbResolver(
-    route: ActivatedRouteSnapshot & ActivatedRouteSnapshotWithPageMeta
+    route: ActivatedRouteSnapshotWithPageMeta,
+    ancestorRoutes: ActivatedRouteSnapshotWithPageMeta[]
   ): RouteBreadcrumbResolver {
-    const breadcrumbConfig = route.data?.cxPageMeta?.breadcrumb;
+    const routes = [...ancestorRoutes, route];
 
-    if (typeof breadcrumbConfig !== 'string' && breadcrumbConfig?.resolver) {
-      const resolver = this.injector.get(
-        breadcrumbConfig.resolver,
-        null
-      ) as RouteBreadcrumbResolver;
+    // try to inject the first defined resolver, start for the current route
+    for (let i = routes.length - 1; i >= 0; i--) {
+      const breadcrumbConfig = this.getBreadcrumbConfig(routes[i]);
+
+      const resolver: RouteBreadcrumbResolver =
+        typeof breadcrumbConfig !== 'string' &&
+        breadcrumbConfig?.resolver &&
+        this.injector.get(breadcrumbConfig.resolver, null);
+
       if (resolver) {
         return resolver;
       }
     }
 
-    // fallback to parent's resolver
-    if (route.parent) {
-      return this.getBreadcrumbResolver(route.parent);
-    }
-
-    // fallback to default, when couldn't find recursively any parent's resolver
+    // fallback to default, when couldn't find any resolver in route or its ancestors
     return this.injector.get(DefaultRouteBreadcrumbResolver);
   }
 
@@ -142,11 +135,25 @@ export class RoutingBreadcrumbsResolver {
     // - any '' routes in the short ancestors line - if any exist
 
     let i = routes.length - 1;
-    while (routes[i]?.routeConfig?.path === '' && i >= 0) {
+    while (routes[i]?.url.length === 0 && i >= 0) {
       i--;
     }
 
-    // Finally we slice the last route with non-empty path (not '')
-    return routes.slice(0, i); // return elements from 0 to i-1
+    // Finally we trim the last route with non-empty path
+    return routes.slice(0, i); // we trim: routes[i],...,routes[length-1]
+  }
+
+  /**
+   * Returns the breadcrumb config placed in the route's `data` configuration.
+   */
+  private getBreadcrumbConfig(
+    route: ActivatedRouteSnapshotWithPageMeta
+  ): string | RouteBreadcrumbConfig {
+    // Note: we use `route.routeConfig.data` (not `route.data`) to save us from
+    // an edge case bug. In Angular, by design the `data` of ActivatedRoute is inherited
+    // from the parent route, if only the child has an empty path ''.
+    // But in any case we don't want the breadcrumb configs to be inherited, so we
+    // read data from the original `routeConfig` which is static.
+    return route?.routeConfig?.data?.cxPageMeta?.breadcrumb;
   }
 }

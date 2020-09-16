@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { combineLatest, Observable } from 'rxjs';
+import { combineLatest, defer, Observable } from 'rxjs';
 import { filter, map, shareReplay } from 'rxjs/operators';
 import { TranslationService } from '../../i18n/translation.service';
 import { PageType } from '../../model/cms.model';
@@ -34,7 +34,7 @@ export class ContentPageMetaResolver extends PageMetaResolver
 
   private _breadcrumbs$ = combineLatest([
     this._homeBreadcrumb$,
-    this.routingPageMetaResolver.resolveBreadcrumbs(),
+    defer(() => this.routingPageMetaResolver.resolveBreadcrumbs()),
   ]).pipe(
     map(
       (breadcrumbs) => breadcrumbs.flat(),

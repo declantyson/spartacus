@@ -28,7 +28,7 @@ export interface RouteBreadcrumbConfig {
    * Optional raw text to be used for a breadcrumb. When defined, properties `i18n` and `resolver`
    * are ignored.
    */
-  raw: string;
+  raw?: string;
 
   /**
    * Optional i18n key for the breadcrumb label. When dynamic params are needed,

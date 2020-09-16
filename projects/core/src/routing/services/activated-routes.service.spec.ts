@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import {
-  ActivatedRouteSnapshot,
   NavigationCancel,
   NavigationEnd,
   NavigationError,
   NavigationStart,
   Router,
   RouterEvent,
+  RouterState,
 } from '@angular/router';
 import { Subject } from 'rxjs';
 import { take } from 'rxjs/operators';
@@ -65,23 +65,26 @@ describe('ActivatedRoutesService', () => {
     });
 
     it('should emit array of activated routes', async () => {
-      const mockRootActivatedRoute: Partial<ActivatedRouteSnapshot> = {
-        firstChild: <ActivatedRouteSnapshot>{
-          component: 'parent',
-          firstChild: <ActivatedRouteSnapshot>{
-            component: 'child',
-            firstChild: null,
+      const mockRouterState: RouterState = <RouterState>{
+        snapshot: {
+          root: {
+            component: null,
+            firstChild: {
+              component: 'parent',
+              firstChild: {
+                component: 'child',
+                firstChild: null,
+              },
+            },
           },
         },
       };
-      spyOnProperty(router.routerState.snapshot, 'root').and.returnValue(
-        mockRootActivatedRoute
-      );
+      (router as any).routerState = mockRouterState; // as any => mitigate readonly
 
       expect(await service.routes$.pipe(take(1)).toPromise()).toEqual([
-        mockRootActivatedRoute,
-        mockRootActivatedRoute.firstChild,
-        mockRootActivatedRoute.firstChild.firstChild,
+        mockRouterState.snapshot.root,
+        mockRouterState.snapshot.root.firstChild,
+        mockRouterState.snapshot.root.firstChild.firstChild,
       ]);
     });
   });
