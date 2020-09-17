@@ -1,7 +1,7 @@
 import { Injectable, StaticProvider } from '@angular/core';
 import { Route } from '@angular/router';
 import { AuthConfig } from '../../auth/config/auth-config';
-import { Config } from '../../config/config.module';
+import { Config } from '../../config/config-tokens';
 import { KymaConfig } from '../../kyma/config/kyma-config';
 import { OccConfig } from '../../occ/config/occ-config';
 
