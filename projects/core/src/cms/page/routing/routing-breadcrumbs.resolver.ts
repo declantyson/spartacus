@@ -2,8 +2,8 @@ import { Injectable, Injector } from '@angular/core';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { combineLatest, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { BreadcrumbMeta } from '../../cms/model/page.model';
-import { TranslationService } from '../../i18n';
+import { TranslationService } from '../../../i18n/translation.service';
+import { BreadcrumbMeta } from '../../model/page.model';
 import { DefaultRouteBreadcrumbResolver } from './default-route-breadcrumb.resolver';
 import {
   ActivatedRouteSnapshotWithPageMeta,

@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { BreadcrumbMeta } from '../../cms/model/page.model';
-import { ActivatedRoutesService } from './activated-routes.service';
+import { BreadcrumbMeta } from '../../../cms/model/page.model';
+import { ActivatedRoutesService } from '../../../routing/services/activated-routes.service';
 import {
   RoutingBreadcrumbsResolver,
   RoutingBreadcrumbsResolverOptions,

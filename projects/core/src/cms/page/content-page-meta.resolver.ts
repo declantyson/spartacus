@@ -3,11 +3,11 @@ import { combineLatest, defer, Observable } from 'rxjs';
 import { filter, map, shareReplay } from 'rxjs/operators';
 import { TranslationService } from '../../i18n/translation.service';
 import { PageType } from '../../model/cms.model';
-import { RoutingPageMetaResolver } from '../../routing/services/routing-page-meta.resolver';
 import { CmsService } from '../facade/cms.service';
 import { BreadcrumbMeta, Page } from '../model/page.model';
 import { PageMetaResolver } from './page-meta.resolver';
 import { PageBreadcrumbResolver, PageTitleResolver } from './page.resolvers';
+import { RoutingPageMetaResolver } from './routing/routing-page-meta.resolver';
 
 /**
  * Resolves the page data for all Content Pages based on the `PageType.CONTENT_PAGE`.
@@ -33,7 +33,7 @@ export class ContentPageMetaResolver
     .translate('common.home')
     .pipe(map((label) => [{ label: label, link: '/' }] as BreadcrumbMeta[]));
 
-  private _breadcrumbs$ = combineLatest([
+  private _breadcrumbs$: Observable<BreadcrumbMeta[]> = combineLatest([
     this._homeBreadcrumb$,
     defer(() => this.routingPageMetaResolver.resolveBreadcrumbs()),
   ]).pipe(

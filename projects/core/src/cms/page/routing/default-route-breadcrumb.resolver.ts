@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-import { BreadcrumbMeta } from '../../cms/model/page.model';
-import { TranslationService } from '../../i18n';
+import { TranslationService } from '../../../i18n/translation.service';
+import { BreadcrumbMeta } from '../../model/page.model';
 import {
   RouteBreadcrumbConfig,
   RouteBreadcrumbResolver,

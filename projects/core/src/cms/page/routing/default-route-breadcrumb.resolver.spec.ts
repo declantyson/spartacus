@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { TranslationService } from '../../i18n/translation.service';
+import { TranslationService } from '../../../i18n/translation.service';
 import { DefaultRouteBreadcrumbResolver } from './default-route-breadcrumb.resolver';
 
 class MockTranslationService implements Partial<TranslationService> {

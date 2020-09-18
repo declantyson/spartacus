@@ -1,7 +1,7 @@
 import { Type } from '@angular/core';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
-import { BreadcrumbMeta } from '../../cms/model/page.model';
+import { BreadcrumbMeta } from '../../model/page.model';
 
 export interface ActivatedRouteSnapshotWithPageMeta
   extends ActivatedRouteSnapshot {

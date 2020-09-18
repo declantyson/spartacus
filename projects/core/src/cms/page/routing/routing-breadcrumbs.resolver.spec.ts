@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { BreadcrumbMeta } from '../../cms';
-import { I18nTestingModule } from '../../i18n/testing/i18n-testing.module';
+import { I18nTestingModule } from '../../../i18n/testing/i18n-testing.module';
+import { BreadcrumbMeta } from '../../model/page.model';
 import { DefaultRouteBreadcrumbResolver } from './default-route-breadcrumb.resolver';
 import {
   ActivatedRouteSnapshotWithPageMeta,

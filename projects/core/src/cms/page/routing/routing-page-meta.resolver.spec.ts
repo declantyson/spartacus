@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { of } from 'rxjs';
 import { take } from 'rxjs/operators';
-import { ActivatedRoutesService } from './activated-routes.service';
+import { ActivatedRoutesService } from '../../../routing/services/activated-routes.service';
 import {
   RoutingBreadcrumbsResolver,
   RoutingBreadcrumbsResolverOptions,
