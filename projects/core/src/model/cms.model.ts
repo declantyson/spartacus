@@ -20,7 +20,7 @@ export interface CmsLinkComponent extends CmsComponent {
   contentPage?: string;
   contentPageLabelOrId?: string;
   linkName?: string;
-  target?: boolean;
+  target?: string;
 }
 
 export interface CmsSiteContextSelectorComponent extends CmsComponent {
